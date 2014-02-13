@@ -102,17 +102,22 @@ ieee_findpan(MAC_MlmeDcfmInd_s *ind, MAC_PanDescr_s **pan)
   return found;
 }
 
+
+#define JENNIC_MAX_NUMBER_OF_PAN_SEARCHES 1
+
 PT_THREAD(ieee_mlmept(MAC_MlmeDcfmInd_s *ev))
   /* mac management thread */
 {
   static void *data = NULL;
   static bool associated = false;
-
+  static int pan_search_counter = 0;
+  
   PT_BEGIN(&ieee_mlme);
 
   do
   {
     PRINTF("ieee_task: requesting active scan\n");
+    pan_search_counter++;
 
     req_scan(MAC_MLME_SCAN_TYPE_ACTIVE, 4);
     PT_YIELD_UNTIL( &ieee_mlme, ev->u8Type==MAC_MLME_DCFM_SCAN &&
@@ -124,12 +129,15 @@ PT_THREAD(ieee_mlmept(MAC_MlmeDcfmInd_s *ev))
 
     /* find a pan to join */
     ieee_findpan(ev, (MAC_PanDescr_s**) &data);
-  } while(data==NULL);
+  } while(data==NULL && pan_search_counter < JENNIC_MAX_NUMBER_OF_PAN_SEARCHES);
 
   /* if a pan descriptor was found, post a join request */
-  PRINTF("ieee_task: pan found -> trying to associate\n");
-  req_associate(data);
-
+  if (data!=NULL) {
+    PRINTF("ieee_task: pan found -> trying to associate\n");
+    req_associate(data);
+  } else {
+    PRINTF("ieee_task: no pan found\n");
+  }
   /* we are started now */
   process_post(PROCESS_BROADCAST, ieee_event, IEEE_STARTED);
 
