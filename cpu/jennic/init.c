@@ -345,7 +345,11 @@ misalign_test()
 void
 init_hardware()
 {
-  init_hardware_baud(38400);
+  #ifdef JENNIC_UART0_BAUDRATE
+    init_hardware_baud(JENNIC_UART0_BAUDRATE);
+  #else
+    init_hardware_baud(38400);
+  #endif
 }
 
 void

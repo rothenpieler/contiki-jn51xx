@@ -2,7 +2,12 @@ CONTIKI_CPU_DIRS     = . dev net sys
 CONTIKI_SOURCEFILES += clock.c timer-arch.c uart1.c uart0.c jts.c assert.c i2c.c irq.c sprintf.c watchdog.c init.c slip.c
 
 ### Compiler definitions
-CCPREFIX = ba-elf
+ifeq ($ISENSE_COMPILER_PATH,)
+	CCPREFIX = ba-elf
+else
+	CCPREFIX = $(ISENSE_COMPILER_PATH)/ba-elf
+endif
+
 CC       = $(CCPREFIX)-gcc
 LD       = $(CCPREFIX)-gcc
 AS       = $(CCPREFIX)-as
@@ -17,7 +22,20 @@ STRIP    = $(CCPREFIX)-strip
 #   the compiler will fail on mixed incomplete builds!
 #
 #   Building for the JN5148 is the default!
-ifeq ($(shell ${CC} -dumpversion),4.2.1)
+
+BUILD_FOR_JN5148 = 1
+
+ifeq ($ISENSE_COMPILER_PATH,)
+	ifeq ($(shell ${CC} -dumpversion),4.2.1)
+		BUILD_FOR_JN5148 = 0
+	endif
+else
+	ifeq ($(TARGET),isense-JN5139)
+		BUILD_FOR_JN5148 = 0
+	endif
+endif
+
+ifeq ($(BUILD_FOR_JN5148),0)
 	ifeq ($(DEBUG),true)
 	CONTIKI_SOURCEFILES += gdb2.c
 	CFLAGS += -DGDB -g
@@ -57,7 +75,7 @@ else
 	CFLAGS += -I$(CONTIKI_CPU)/jn5148
 	LDFLAGS += -L$(CONTIKI_CPU)/jn5148
 	TARGET_LIBFILES += -lHwPatch -lMacPatch
-	
+
 	CFLAGS += -Wall -Os -fomit-frame-pointer -fpack-struct -Wcast-align
 	CFLAGS += -fdata-sections -ffunction-sections
 	CFLAGS += -march=ba2
@@ -69,7 +87,7 @@ else
 	CFLAGS += -ffixed-r20 -ffixed-r21 -ffixed-r22 -ffixed-r23
 	CFLAGS += -ffixed-r24 -ffixed-r25 -ffixed-r26 -ffixed-r27
 	CFLAGS += -ffixed-r28 -ffixed-r29 -ffixed-r30 -ffixed-r31
-	
+	  
 	LDFLAGS += -Wl,--relax -TAppBuild_JN5148.ld -nostartfiles -mba2_elf -march=ba2 -Wl,-Map=contiki-$(TARGET).map
 endif
 
@@ -89,5 +107,8 @@ endif
 	$(OBJCOPY) $^ -O binary $@
 
 %.u: %.$(TARGET).hex
-	sudo jenprog -c serial -t /dev/ttyACM0 $<
-	#jenprog $<
+	#sudo jenprog -c ftdi $<
+	jenprog $<
+
+%.bin: %.$(TARGET).hex
+	cp $< $(TARGET).bin
