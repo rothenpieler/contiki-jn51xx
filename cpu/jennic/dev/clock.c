@@ -65,7 +65,11 @@ clock_init()
   vAHI_TickTimerInterval(tick_timer_interval);
   vAHI_TickTimerWrite(0);
   vAHI_TickTimerIntEnable(1);
+#ifdef APP_HARDWARE_API_JN5148
   vAHI_TickTimerRegisterCallback(&tick_timer_int);
+#else
+  vAHI_TickTimerInit(&tick_timer_int);
+#endif
   vAHI_TickTimerConfigure(E_AHI_TICK_TIMER_RESTART);
   ticking = true;
 }
