@@ -61,6 +61,7 @@ tick_timer_int(uint32 u32Device, uint32 u32ItemBitmap)
 void
 clock_init()
 {
+#ifdef APP_HARDWARE_API_JN5148
   tick_timer_interval = TICK_TIMER_MAX;
   vAHI_TickTimerInterval(tick_timer_interval);
   vAHI_TickTimerWrite(0);
@@ -72,6 +73,13 @@ clock_init()
 #endif
   vAHI_TickTimerConfigure(E_AHI_TICK_TIMER_RESTART);
   ticking = true;
+#else
+  tick_timer_interval = TICK_TIMER_MAX;
+  vAHI_TickTimerInterval(tick_timer_interval);
+  vAHI_TickTimerConfigure(E_AHI_TICK_TIMER_CONT);
+  vAHI_TickTimerWrite(0);
+  ticking = true;
+#endif
 }
 
 clock_time_t
