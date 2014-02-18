@@ -92,7 +92,7 @@ else
 endif
 
 ### Compilation rules
-
+.PRECIOUS: %.o %.or32
 # .PHONY: symbols.c symbols.h
 ifdef CORE
 symbols.c symbols.h:
@@ -112,3 +112,4 @@ endif
 
 %.bin: %.$(TARGET).hex
 	cp $< $(TARGET).bin
+	cp *.$(TARGET) $(TARGET).or32
